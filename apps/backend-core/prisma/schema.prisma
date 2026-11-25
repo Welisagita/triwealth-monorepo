@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+// --- DOMAIN: USERS ---
+model User {
+  id             String      @id @default(uuid())
+  name           String
+  email          String      @unique
+  password       String 
+  role           Role        @default(USER)     
+  kycDocumentUrl String?     
+  kycStatus      String      @default("PENDING")
+  riskProfile    String      @default("CONSERVATIVE")  
+  adminNote      String?     
+  xp             Int         @default(0) // <-- GAMIFIKASI: Poin untuk Leaderboard
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relasi Finansial & Edukasi
+  portfolios     Portfolio[]
+  watchlists     Watchlist[]
+  positions      Position[]
+  transactions   Transaction[]
+  
+  // Relasi Komunitas
+  posts          Post[]
+  comments       Comment[]
+  likes          Like[]
+
+  @@map("users")
+}
+
+// --- DOMAIN: PORTFOLIO ---
+model Portfolio {
+  id        String   @id @default(uuid())
+  userId    String   
+  name      String   
+  balance   Float    @default(0.0)
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("portfolios")
+}
+
+// --- DOMAIN: EDUCATION ---
+model Education {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  type        String    
+  xpReward    Int       @default(10)
+  isPublished Boolean   @default(true)
+  authorName  String?   
+  publishedAt DateTime? 
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("education_contents")
+}
+
+model Watchlist {
+  id        String   @id @default(uuid())
+  userId    String   
+  ticker    String
+  name      String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ticker]) 
+}
+
+// --- DOMAIN: TRADING & PORTFOLIO ---
+model Position {
+  id           String   @id @default(uuid())
+  userId       String
+  ticker       String
+  name         String
+  assetType    String   
+  amount       Float    
+  averagePrice Float    
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ticker]) 
+  @@map("positions")
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  userId     String
+  ticker     String
+  type       String   
+  amount     Float    
+  price      Float    
+  totalValue Float    
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+// ==========================================
+// --- DOMAIN: COMMUNITY (TAMBAHAN BARU) ---
+// ==========================================
+
+model Post {
+  id        String    @id @default(uuid())
+  userId    String
+  content   String    // Isi cuitan / diskusi
+  tags      String[]  // Untuk Cashtag seperti ["$BMRI", "$BTC"]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  likes     Like[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Like {
+  id        String    @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime  @default(now())
+
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 1 User hanya bisa like 1 post maksimal 1 kali
+  @@unique([userId, postId])
+  @@map("likes")
+}

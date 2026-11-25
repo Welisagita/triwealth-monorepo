@@ -1,0 +1,19 @@
+# Dependencies & Build Outputs
+node_modules/
+dist/
+build/
+
+# Environment Variables (Wajib disembunyikan)
+.env
+.env.*
+
+# OS & Editor
+.DS_Store
+
+# AI Assistant Folders
+.agents/
+.claude/
+.windsurf/
+
+# Local Test Uploads
+apps/backend-core/public/uploads/*

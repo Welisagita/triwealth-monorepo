@@ -1,0 +1,71 @@
+
+services:
+  # 1. Database PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: triwealth_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-supersecret}
+      POSTGRES_DB: triwealth_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - triwealth_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Aplikasi Backend Core
+  backend-core:
+    build: 
+      context: ./apps/backend-core
+      dockerfile: Dockerfile
+    container_name: triwealth_backend_core
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./apps/backend-core/.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:supersecret@postgres:5432/triwealth_dev?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - triwealth_net
+
+  # 3. API Gateway / Reverse Proxy (Nginx)
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: triwealth_api_gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend-core
+    networks:
+      - triwealth_net
+
+  # 4. Market Data Service
+  market-data:
+    build:
+      context: ./apps/service-market-data
+    container_name: triwealth_market_data
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - triwealth_net    
+
+volumes:
+  pgdata:
+
+networks:
+  triwealth_net:
+    driver: bridge
