@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import TopHeader from '../components/TopHeader';
-import { API_URL } from '../config/api';
+import { API_URL, MARKET_API_URL } from '../config/api';
 
 // Impor 6 Komponen yang sudah dipecah
 import CategoryTabs from '../components/market/CategoryTabs';
@@ -83,8 +83,8 @@ export default function Market() {
       setIsLoading(true);
       try {
         const [quoteRes, historyRes] = await Promise.all([
-          axios.get(`http://localhost:8000/api/v1/market/quote/${selectedAsset.ticker}`),
-          axios.get(`http://localhost:8000/api/v1/market/history/${selectedAsset.ticker}?period=${selectedPeriod}`)
+          axios.get(`${MARKET_API_URL}/api/v1/market/quote/${selectedAsset.ticker}`),
+          axios.get(`${MARKET_API_URL}/api/v1/market/history/${selectedAsset.ticker}?period=${selectedPeriod}`)
         ]);
         setQuote(quoteRes.data);
         setChartData(historyRes.data.data);

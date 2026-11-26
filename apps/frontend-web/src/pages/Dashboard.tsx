@@ -8,7 +8,7 @@ import {
 import { PieChart, Pie, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Sidebar from '../components/Sidebar';
 import TopHeader from '../components/TopHeader';
-import { API_URL } from '../config/api';
+import { API_URL, MARKET_API_URL } from '../config/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -57,12 +57,13 @@ export default function Dashboard() {
   };
 
   // Fetch Live Market
+  // Fetch Live Market
   useEffect(() => {
     fetchData();
     const fetchMarketData = async () => {
       try {
         const tickers = ['BTC-USD', 'AAPL', 'BBCA.JK'];
-        const promises = tickers.map(ticker => axios.get(`http://localhost:8000/api/v1/market/quote/${ticker}`));
+        const promises = tickers.map(ticker => axios.get(`${MARKET_API_URL}/api/v1/market/quote/${ticker}`));
         const results = await Promise.all(promises);
         setLiveMarket(results.map(res => res.data));
       } catch (error) {
